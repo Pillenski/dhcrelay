@@ -225,7 +225,7 @@ setup_iflist(void)
 				intf->linklocal.s6_addr[3] = 0;
 #endif
 			} else {
-				if (is_addr6_global_unicast(&sin6->sin6_addr) && !((unsigned int)ifa->ifa_addrflag & (IN6_IFF_TENTATIVE | IN6_IFF_DUPLICATED | IN6_IFF_DETACHED | IN6_IFF_DEPRECATED))) {
+				if (is_addr6_global_unicast(&sin6->sin6_addr) && !((unsigned int)ifa->ifa_addrflags & (IN6_IFF_TENTATIVE | IN6_IFF_DUPLICATED | IN6_IFF_DETACHED | IN6_IFF_DEPRECATED))) {
 					intf->gipv6 = 1;
 					intf->preferredaddr = sin6->sin6_addr;
 				}
