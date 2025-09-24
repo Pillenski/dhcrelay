@@ -572,13 +572,10 @@ relay6_pushrelaymsg(struct packet_ctx *pc, struct interface_info *intf,
 	else
 		dsr->dsr_hopcount = DHCP6_HOP_LIMIT;
 
-	/*
-	 * XXX RFC 6221 Section 6.1: layer 2 mode does not set
-	 * linkaddr, but we'll use our link-local always to identify the
-	 * interface where the packet came in so we don't need to keep
-	 * the interface addresses updated.
-	 */
-	dsr->dsr_linkaddr = intf->linklocal;
+	if (intf->gipv6)
+		dsr->dsr_linkaddr = intf->preferredaddr;
+	else
+		dsr->dsr_linkaddr = intf->linklocal;
 
 	memcpy(&dsr->dsr_peer, &ss2sin6(&pc->pc_src)->sin6_addr,
 	    sizeof(dsr->dsr_peer));

@@ -109,6 +109,7 @@ struct interface_info {
 	int			 ipv6; /* Has any IPv6 address. */
 	int			 gipv6; /* Has global IPv6 address. */
 	struct in6_addr		 linklocal; /* IPv6 link-local address. */
+	struct in6_addr		 preferredaddr; /* IPv6 GUA/ULA. */
 
 	TAILQ_ENTRY(interface_info) entry;
 };

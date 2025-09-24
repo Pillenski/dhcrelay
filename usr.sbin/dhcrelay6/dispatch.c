@@ -127,6 +127,29 @@ iflist_getbyaddr6(struct in6_addr *addr)
 	return NULL;
 }
 
+static int
+is_addr6_global_unicast(const struct in6_addr *a)
+{
+    /* Ausschlüsse: unspecified, loopback, multicast, linklocal, IPv4-mapped */
+    if (IN6_IS_ADDR_UNSPECIFIED(a)) return 0;
+    if (IN6_IS_ADDR_LOOPBACK(a)) return 0;
+    if (IN6_IS_ADDR_MULTICAST(a)) return 0;
+    if (IN6_IS_ADDR_LINKLOCAL(a)) return 0;
+    /* site-local (deprecated) */
+#ifdef IN6_IS_ADDR_SITELOCAL
+    if (IN6_IS_ADDR_SITELOCAL(a)) return 0;
+#endif
+    /* IPv4 mapped? (we don't want ::ffff:0:0/96 here) */
+    if ((a->s6_addr[0] == 0) && (a->s6_addr[1] == 0) && (a->s6_addr[2] == 0) &&
+        (a->s6_addr[3] == 0) && (a->s6_addr[4] == 0) && (a->s6_addr[5] == 0) &&
+        (a->s6_addr[6] == 0) && (a->s6_addr[7] == 0) &&
+        (a->s6_addr[8] == 0) && (a->s6_addr[9] == 0) &&
+        (a->s6_addr[10] == 0xff) && (a->s6_addr[11] == 0xff))
+        return 0;
+
+    return 1;
+}
+
 void
 setup_iflist(void)
 {
@@ -200,8 +223,12 @@ setup_iflist(void)
 				intf->linklocal.s6_addr[2] = 0;
 				intf->linklocal.s6_addr[3] = 0;
 #endif
-			} else
-				intf->gipv6 = 1;
+			} else {
+				if (is_addr6_global_unicast(&sin6->sin6_addr) && !((unsigned int)ifa->ifa_addrflag & IN6_IFF_TEMPORARY)) {
+					intf->gipv6 = 1;
+					intf->preferredaddr = sin6->sin6_addr;
+				}
+			}
 
 			/* At least one IPv6 address was found. */
 			intf->ipv6 = 1;
