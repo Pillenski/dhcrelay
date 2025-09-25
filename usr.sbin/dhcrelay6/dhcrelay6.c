@@ -95,6 +95,8 @@ int	 relay6_poprelaymsg(struct packet_ctx *, struct interface_info **,
 void	 rai_configure(struct packet_ctx *, struct interface_info *);
 void	 relay6_logsrcaddr(struct packet_ctx *, struct interface_info *,
 	    uint8_t);
+void	 relay6_logsrcaddraction(struct packet_ctx *, struct interface_info *,
+	    uint8_t, const char *);
 void	 relay6(struct interface_info *, void *, size_t,
 	    struct packet_ctx *);
 void	 mcast6_recv(struct protocol *);
@@ -920,14 +922,7 @@ relay6(struct interface_info *intf, void *p, size_t plen,
 	}
 
 	/* Or send packet to the client. But only if it is a relay reply message. */
-	/* Or send packet to the client. But only if it is a relay reply message. */
 	if (clientdir) {
-		if (msgtype == DHCP6_MT_RELAYREPL) {
-			relay6_logsrcaddr(pc, interfaces, msgtype);
-			send_packet(interfaces, p, buflen, pc);
-		} else {
-			relay6_logsrcaddraction(pc, interfaces, msgtype, "dropped");
-		}
 		if (msgtype == DHCP6_MT_RELAYREPL) {
 			relay6_logsrcaddr(pc, interfaces, msgtype);
 			send_packet(interfaces, p, buflen, pc);
