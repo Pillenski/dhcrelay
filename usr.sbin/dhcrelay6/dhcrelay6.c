@@ -779,12 +779,8 @@ relay6_logsrcaddraction(struct packet_ctx *pc, struct interface_info *intf,
 	if (drm == DRM_LAYER2)
 		log_info("%s %s for %s to %s",
 		    action, type, print_hw_addr(pc->pc_htype, pc->pc_hlen,
-		log_info("%s %s for %s to %s",
-		    action, type, print_hw_addr(pc->pc_htype, pc->pc_hlen,
 		    pc->pc_smac), intf->name);
 	else
-		log_info("%s %s for %s to %s%%%s",
-		    action, type,
 		log_info("%s %s for %s to %s%%%s",
 		    action, type,
 		    v6addr2str(&ss2sin6(&pc->pc_srcorig)->sin6_addr),
