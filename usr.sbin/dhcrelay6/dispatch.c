@@ -128,9 +128,7 @@ iflist_getbyaddr6(struct in6_addr *addr)
 	return NULL;
 }
 
-static int
-get_in6_addr_flags(const char *ifname, const struct in6_addr *a, unsigned int *flags_out)
-{
+static int get_in6_addr_flags(const char *ifname, const struct in6_addr *a, unsigned int *flags_out) {
     if (!ifname || !a || !flags_out) { errno = EINVAL; return -1; }
 
     int s = socket(AF_INET6, SOCK_DGRAM, 0);
@@ -139,34 +137,27 @@ get_in6_addr_flags(const char *ifname, const struct in6_addr *a, unsigned int *f
     struct in6_ifreq ifr6;
     memset(&ifr6, 0, sizeof(ifr6));
     strlcpy(ifr6.ifr_name, ifname, sizeof(ifr6.ifr_name));
-
     ifr6.ifr_addr.sin6_family = AF_INET6;
     ifr6.ifr_addr.sin6_len    = sizeof(struct sockaddr_in6);
     ifr6.ifr_addr.sin6_addr   = *a;
 
     if (ioctl(s, SIOCGIFAFLAG_IN6, &ifr6) < 0) {
-        int saved = errno;
-        close(s);
-        errno = saved;
-        return -1;
-    }
-
+		int e = errno;
+		close(s);
+		errno = e;
+		return -1;
+	}
     close(s);
 
-#if defined(__FreeBSD__)
-#  if defined(ifr_ifru) && defined(ifru_flags6)
-    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags6;
-#  elif defined(ifr_ifru) && defined(ifru_flags)
-    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags;
-#  elif defined(ifr_flags)
-    *flags_out = (unsigned int)ifr6.ifr_flags;
-#  else
-#    error "cannot find struct interface address flags"
-#  endif
+#if defined(__FreeBSD_version) && (__FreeBSD_version >= 1400000)
+    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags6;   // FreeBSD 14.x
 #else
-    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags; /* Fallback */
+# ifdef ifru_flags
+    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags;    // some 13.x-Versions
+# else
+    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags6;   // Fallback
+# endif
 #endif
-
     return 0;
 }
 
