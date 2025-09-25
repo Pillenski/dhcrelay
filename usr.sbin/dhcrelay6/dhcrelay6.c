@@ -762,7 +762,7 @@ rai_configure(struct packet_ctx *pc, struct interface_info *intf)
 }
 
 void
-relay6_logsrcaddr(const struct packet_ctx *pc, const struct interface_info *intf,
+relay6_logsrcaddr(struct packet_ctx *pc, struct interface_info *intf,
     uint8_t msgtype)
 {
 	relay6_logsrcaddraction(pc, intf, msgtype, "forwarded");
