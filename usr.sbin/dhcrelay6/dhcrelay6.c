@@ -927,7 +927,7 @@ relay6(struct interface_info *intf, void *p, size_t plen,
 			relay6_logsrcaddr(pc, interfaces, msgtype);
 			send_packet(interfaces, p, buflen, pc);
 		} else {
-			relay6_logsrcaddraction(pc, interfaces, msgtype, "dropped");
+			// relay6_logsrcaddraction(pc, interfaces, msgtype, "dropped");
 		}
 		return;
 	}
