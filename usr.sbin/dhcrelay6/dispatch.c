@@ -129,9 +129,51 @@ iflist_getbyaddr6(struct in6_addr *addr)
 }
 
 static int
+get_in6_addr_flags(const char *ifname, const struct in6_addr *a, unsigned int *flags_out)
+{
+    if (!ifname || !a || !flags_out) { errno = EINVAL; return -1; }
+
+    int s = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (s < 0) return -1;
+
+    struct in6_ifreq ifr6;
+    memset(&ifr6, 0, sizeof(ifr6));
+    strlcpy(ifr6.ifr_name, ifname, sizeof(ifr6.ifr_name));
+
+    ifr6.ifr_addr.sin6_family = AF_INET6;
+    ifr6.ifr_addr.sin6_len    = sizeof(struct sockaddr_in6);
+    ifr6.ifr_addr.sin6_addr   = *a;
+
+    if (ioctl(s, SIOCGIFAFLAG_IN6, &ifr6) < 0) {
+        int saved = errno;
+        close(s);
+        errno = saved;
+        return -1;
+    }
+
+    close(s);
+
+#if defined(__FreeBSD__)
+#  if defined(ifr_ifru) && defined(ifru_flags6)
+    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags6;
+#  elif defined(ifr_ifru) && defined(ifru_flags)
+    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags;
+#  elif defined(ifr_flags)
+    *flags_out = (unsigned int)ifr6.ifr_flags;
+#  else
+#    error "cannot find struct interface address flags"
+#  endif
+#else
+    *flags_out = (unsigned int)ifr6.ifr_ifru.ifru_flags; /* Fallback */
+#endif
+
+    return 0;
+}
+
+static int
 is_addr6_global_unicast(const struct in6_addr *a)
 {
-    /* Ausschlüsse: unspecified, loopback, multicast, linklocal, IPv4-mapped */
+    /* Exclusions: unspecified, loopback, multicast, linklocal, IPv4-mapped */
     if (IN6_IS_ADDR_UNSPECIFIED(a)) return 0;
     if (IN6_IS_ADDR_LOOPBACK(a)) return 0;
     if (IN6_IS_ADDR_MULTICAST(a)) return 0;
@@ -160,6 +202,7 @@ setup_iflist(void)
 	struct if_data			*ifi;
 	struct sockaddr_in		*sin;
 	struct sockaddr_in6		*sin6;
+	unsigned int 			flags;
 
 	TAILQ_INIT(&intflist);
 	if (getifaddrs(&ifap))
@@ -224,8 +267,8 @@ setup_iflist(void)
 				intf->linklocal.s6_addr[2] = 0;
 				intf->linklocal.s6_addr[3] = 0;
 #endif
-			} else {
-				if (is_addr6_global_unicast(&sin6->sin6_addr) && !((unsigned int)ifa->ifa_addrflags & (IN6_IFF_TENTATIVE | IN6_IFF_DUPLICATED | IN6_IFF_DETACHED | IN6_IFF_DEPRECATED))) {
+			} else if (is_addr6_global_unicast(&sin6->sin6_addr)) {				
+				if ((get_in6_addr_flags(ifa->ifa_name, &sin6->sin6_addr, &flags)==0) && !(flags & (IN6_IFF_TENTATIVE | IN6_IFF_DUPLICATED | IN6_IFF_DETACHED | IN6_IFF_DEPRECATED))) {
 					intf->gipv6 = 1;
 					intf->preferredaddr = sin6->sin6_addr;
 				}
