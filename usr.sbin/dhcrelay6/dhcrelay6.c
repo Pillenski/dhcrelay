@@ -762,7 +762,7 @@ rai_configure(struct packet_ctx *pc, struct interface_info *intf)
 }
 
 void
-relay6_logsrcaddr(struct packet_ctx *pc, struct interface_info *intf,
+relay6_logsrcaddr(const struct packet_ctx *pc, const struct interface_info *intf,
     uint8_t msgtype)
 {
 	relay6_logsrcaddraction(pc, intf, msgtype, "forwarded");
@@ -775,11 +775,16 @@ relay6_logsrcaddraction(struct packet_ctx *pc, struct interface_info *intf,
 	const char		*type;
 
 	type = dhcp6type2str(msgtype);
+	type = dhcp6type2str(msgtype);
 	if (drm == DRM_LAYER2)
+		log_info("%s %s for %s to %s",
+		    action, type, print_hw_addr(pc->pc_htype, pc->pc_hlen,
 		log_info("%s %s for %s to %s",
 		    action, type, print_hw_addr(pc->pc_htype, pc->pc_hlen,
 		    pc->pc_smac), intf->name);
 	else
+		log_info("%s %s for %s to %s%%%s",
+		    action, type,
 		log_info("%s %s for %s to %s%%%s",
 		    action, type,
 		    v6addr2str(&ss2sin6(&pc->pc_srcorig)->sin6_addr),
@@ -919,7 +924,14 @@ relay6(struct interface_info *intf, void *p, size_t plen,
 	}
 
 	/* Or send packet to the client. But only if it is a relay reply message. */
+	/* Or send packet to the client. But only if it is a relay reply message. */
 	if (clientdir) {
+		if (msgtype == DHCP6_MT_RELAYREPL) {
+			relay6_logsrcaddr(pc, interfaces, msgtype);
+			send_packet(interfaces, p, buflen, pc);
+		} else {
+			relay6_logsrcaddraction(pc, interfaces, msgtype, "dropped");
+		}
 		if (msgtype == DHCP6_MT_RELAYREPL) {
 			relay6_logsrcaddr(pc, interfaces, msgtype);
 			send_packet(interfaces, p, buflen, pc);
